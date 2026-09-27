@@ -26,9 +26,11 @@ LINES = {
     'account.move': ['invoice_line_ids'],
     'stock.picking': ['move_ids_without_package'],
 }
-# written by Odoo itself all the time: tracking them would only add noise
+# written by Posify itself all the time: tracking them would only add noise
 NOISY_FIELDS = {'write_date', 'write_uid', '__last_update', 'message_main_attachment_id', 'activity_ids',
                 'message_ids', 'message_follower_ids', 'website_message_ids', 'rating_ids'}
+# field types Posify cannot write in the history (images, files, technical references)
+UNTRACKABLE_TYPES = ('binary', 'json', 'reference', 'many2one_reference')
 
 
 class IrModel(models.Model):
@@ -42,7 +44,10 @@ class IrModel(models.Model):
 
     def _default_automatic_custom_tracking_domain_rules(self):
         rules = super()._default_automatic_custom_tracking_domain_rules()
-        base = [('readonly', '=', False), ('name', 'not in', sorted(NOISY_FIELDS))]
+        base = [('readonly', '=', False), ('name', 'not in', sorted(NOISY_FIELDS)),
+                ('ttype', 'not in', UNTRACKABLE_TYPES)]
+        for model in rules:     # rules of tracking_manager itself (product.product…): no images either
+            rules[model] = expression.AND([base, rules[model]])
         for model, lines in LINES.items():
             rules[model] = expression.AND([base, ['|', ('ttype', '!=', 'one2many'), ('name', 'in', lines)]])
         rules['default_automatic_rule'] = expression.AND([base, [('ttype', '!=', 'one2many')]])
@@ -63,6 +68,17 @@ class IrModel(models.Model):
         self.write({'active_custom_tracking': False})
         self.env.registry.clear_cache()
         return True
+
+    @api.model
+    def _logs_partout_untrack_unsupported(self):
+        """Images / files are never tracked (Posify raises an error when one of them changes)."""
+        models = self.sudo().search([('active_custom_tracking', '=', True), ('automatic_custom_tracking', '=', True)])
+        for model in models:
+            model._compute_automatic_custom_tracking_domain()
+        models.update_custom_tracking()
+        self.env['ir.model.fields'].sudo().search(
+            [('custom_tracking', '=', True), ('ttype', 'in', UNTRACKABLE_TYPES)]).write({'custom_tracking': False})
+        self.env.registry.clear_cache()
 
     @api.model
     def _logs_partout_activate_defaults(self):

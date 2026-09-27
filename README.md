@@ -1,7 +1,7 @@
-# Logs partout — historique des modifications (Odoo 18)
+# Logs partout — historique des modifications (Posify 18)
 
 Chaque modification, sur tous les écrans de gestion, est gardée dans le **fil de discussion (chatter)** de la
-fiche, à la manière standard d'Odoo : **ancienne valeur → nouvelle valeur, qui, quand**.
+fiche, à la manière standard de Posify : **ancienne valeur → nouvelle valeur, qui, quand**.
 
 Dossier d'addons contenant deux modules :
 
@@ -38,7 +38,7 @@ Les champs calculés, en lecture seule ou techniques (date de modification…) n
 Les **commandes et sessions du point de vente** ne sont pas suivies par défaut : la clôture d'une session met à
 jour toutes ses commandes, cela ferait des milliers de messages. Elles peuvent être activées.
 
-**Écrans sans chatter dans Odoo** : un chatter standard (`mail.thread`) leur est ajouté — emplacements, entrepôts,
+**Écrans sans chatter dans Posify** : un chatter standard (`mail.thread`) leur est ajouté — emplacements, entrepôts,
 types d'opération, routes, catégories PdV, points de vente, moyens de paiement, programmes de fidélité, unités de
 mesure, étiquettes, attributs, conditions de paiement. Il est ajouté au formulaire utilisé, même personnalisé.
 

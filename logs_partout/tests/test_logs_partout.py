@@ -11,7 +11,7 @@ class TestLogsPartout(TransactionCase):
         cls.env['ir.model']._logs_partout_activate_defaults()
 
     def _flush_tracking(self):
-        # the chatter tracking is written when the transaction is committed (like Odoo's own mail tests)
+        # the chatter tracking is written when the transaction is committed (like Posify's own mail tests)
         self.env.flush_all()
         self.env.cr.precommit.run()
         self.env.flush_all()
@@ -39,6 +39,20 @@ class TestLogsPartout(TransactionCase):
             [('model', '=', 'product.template'), ('res_id', '=', product.id)]).mapped('body'))
         self.assertIn('2413501000000', bodies)
         self.assertIn('description_sale', changes)
+
+    def test_image_change_does_not_block(self):
+        """An image is not tracked: changing it must not raise (was: 'Unsupported tracking on field image_1920')."""
+        png = ('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
+        partner = self.env['res.partner'].create({'name': 'Photo'})
+        product = self.env['product.template'].create({'name': 'Photo'})
+        self._flush_tracking()
+        tracked = self.env['ir.model.fields'].search([('custom_tracking', '=', True), ('ttype', '=', 'binary')])
+        self.assertFalse(tracked)
+        partner.write({'image_1920': png, 'phone': '22513690'})
+        product.write({'image_1920': png})
+        self._flush_tracking()
+        self.assertIn('phone', self._changes(partner))
+        self.assertNotIn('image_1920', self._changes(partner))
 
     def test_screen_without_chatter_gets_one(self):
         location = self.env['stock.location'].create({'name': 'Réserve', 'usage': 'internal'})
